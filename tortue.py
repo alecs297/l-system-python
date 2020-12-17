@@ -85,12 +85,13 @@ def treat_axiom(axiom, m, output):
         else:
             custom_log("error", "Unrecognized character in axiom: " + c)
             exit(1)
+    tracer(1)
     f.write(r + "exitonclick()")
     f.close()
     print("Sctipt generated to {} . It can be launched using python {}".format(output, output))
 
 def skip_animation():
-    tracer(0, 0)
+    tracer(0)
 
 movement = {
     "a": a,
