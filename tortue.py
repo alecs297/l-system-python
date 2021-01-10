@@ -1,24 +1,17 @@
 from time import localtime
 from time import strftime
-from inspect import getsource
 from turtle import *
 
-
-default_jump = 5
-default_angle = 45
-default_speed = 0
-default_input = "+a[a]++[a]*a"
-default_file = "output.py"
-
-points = []
-output = default_file
-
-axiom = "a+a+a"
-rules = [
-     "a=a-a+a"
-]
-angle = 120
-level = 7
+def get_moves(size, angle, points):
+    return {
+        "a": lambda: a(size),
+        "b": lambda: b(size),
+        "+": lambda: plus(angle),
+        "-": lambda: minus(angle),
+        "*": snap,
+        "[": lambda: save_point(points),
+        "]": lambda: rewind_to_point(points)
+    }
 
 def update_rgb(rgb):
     r, g, b = 0, 1, 2
@@ -35,22 +28,23 @@ def update_rgb(rgb):
 
 def custom_log(type, message):
     print("{} [{}] {}".format(strftime("%H:%M:%S", localtime()), type.upper(), message))
+    if (type == "error"): exit(1)
 
-def a():
+def a(size):
     pd()
-    fd(default_jump)
-    return ("pd;fd({})\n".format(default_jump))
+    fd(size)
+    return ("pd;fd({})\n".format(size))
 
-def b():
+def b(size):
     pu()
-    fd(default_jump)
-    return ("pu;fd({})\n".format(default_jump))
+    fd(size)
+    return ("pu;fd({})\n".format(size))
 
-def plus():
+def plus(angle):
     right(angle)
     return ("right({})\n".format(angle))
 
-def minus():
+def minus(angle):
     left(angle)
     return ("left({})\n".format(angle))
 
@@ -74,8 +68,37 @@ def rewind_to_point(points):
         points.pop()
     else:
         custom_log("error", "Tried rewinding to non-existing point, please check your axiom")
-        exit(1)
     return r
+
+def check_line(line):
+    return ("=" in line)
+
+def trim_spaces(text):
+    return "".join(text.split())
+
+def sanitize_line(line):
+    return line.replace('"', "")
+
+def parse_file(file):
+    options = {"regles": []}
+    f = open(file, 'r')
+    lines = f.readlines()
+    reading_rules = 0
+    for line in lines:
+        line = trim_spaces(line)
+        if (check_line(line)):
+            r = line.split("=")
+            if (r[0] == "regles"):
+                reading_rules = 1
+            elif (reading_rules and line[0] == '"'):
+                options["regles"].append(sanitize_line(line))
+            else:
+                reading_rules = 0
+                options[r[0]] = sanitize_line(r[1])
+        else:
+            custom_log("error", "Provided file is not following the correct syntax")
+    f.close()
+    return options
 
 def inject_rule(axiom, character, rule):
     return rule.join(axiom.split(character))
@@ -88,41 +111,46 @@ def parse_levels(axiom, levels, rules):
                 axiom = inject_rule(axiom, character, parsed_rule)
             else:
                 custom_log("error", "Invalid rule: " + rule)
-                exit(1)
     return axiom
 
-def treat_axiom(axiom, m, output):
-    r = "from turtle import *;speed({});onkey(lambda: tracer(0), 'space');listen();title('Press SPACE to skip preview')\n".format(default_speed)
+def treat_axiom(axiom, m, output, rgb):
     f = open(output, "w")
-    rgb = [255, 0, 0]
+    f.write("from turtle import *;speed(0);onkey(lambda: tracer(0), 'space');listen();title('Press SPACE to skip preview')\n")
     colormode(255)
     bgcolor("black")
+    pencolor("white")
     screensize(2000, 2000)
+    if (rgb): rgb = [255, 0, 0]
     for c in axiom:
         if (c in m):
-            pencolor(update_rgb(rgb))
+            if (rgb): pencolor(update_rgb(rgb))
             f.write(m[c]())
         else:
             custom_log("error", "Unrecognized character in axiom: " + c)
-            exit(1)
-    f.write("tracer(1)")
+    f.write("tracer(1);exitonclick();title('Click anywhere to close')")
     f.close()
-    print("Sctipt generated to {} . It can be launched using python {}".format(output, output))
+    custom_log("success", "Sctipt generated to {} . It can be launched using python {}".format(output, output))
 
-movement = {
-    "a": a,
-    "b": b,
-    "+": plus,
-    "-": minus,
-    "*": snap,
-    "[": lambda: save_point(points),
-    "]": lambda: rewind_to_point(points)
-}
 
-onkey(lambda: tracer(0), "space")
-listen()
-title("Press SPACE to skip preview")
-speed(default_speed)
-treat_axiom(parse_levels(axiom, level, rules), movement, output)
-tracer(1)
-done()
+if __name__ == "__main__":
+    points = []
+    output = "output.py"
+
+    try:
+        options = parse_file("text.txt")
+    except:
+        custom_log("error", "Couldn't open the specified file")
+
+    movement = get_moves(int(options["taille"]), int(options["angle"]), points)
+    rgb = ("rgb" in options and options["rgb"] == 1)
+    onkey(lambda: tracer(0), "space")
+    listen()
+    title("Press SPACE to skip preview")
+    speed(0)
+    try:
+        treat_axiom(parse_levels(options["axiome"], int(options["niveau"]), options["regles"]), movement, output, rgb)
+    except:
+        custom_log("error", "Couldn't write to the specified file")
+    tracer(1)
+    title("Click anywhere to close")
+    exitonclick()
