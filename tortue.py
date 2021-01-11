@@ -2,30 +2,6 @@ from time import localtime
 from time import strftime
 from turtle import *
 
-def get_moves(size, angle, points):
-    return {
-        "a": lambda: a(size),
-        "b": lambda: b(size),
-        "+": lambda: plus(angle),
-        "-": lambda: minus(angle),
-        "*": snap,
-        "[": lambda: save_point(points),
-        "]": lambda: rewind_to_point(points)
-    }
-
-def update_rgb(rgb):
-    r, g, b = 0, 1, 2
-    if (rgb[r] > 0 and rgb[b] == 0):
-        rgb[r] -= 1
-        rgb[g] += 1
-    elif (rgb[g] > 0 and rgb[r] == 0):
-        rgb[g] -= 1
-        rgb[b] += 1
-    else:
-        rgb[b] -= 1
-        rgb[r] += 1
-    return tuple(rgb)
-
 def custom_log(type, message):
     print("{} [{}] {}".format(strftime("%H:%M:%S", localtime()), type.upper(), message))
     if (type == "error"): exit(1)
@@ -69,6 +45,30 @@ def rewind_to_point(points):
     else:
         custom_log("error", "Tried rewinding to non-existing point, please check your axiom")
     return r
+
+def get_moves(size, angle, points):
+    return {
+        "a": lambda: a(size),
+        "b": lambda: b(size),
+        "+": lambda: plus(angle),
+        "-": lambda: minus(angle),
+        "*": snap,
+        "[": lambda: save_point(points),
+        "]": lambda: rewind_to_point(points)
+    }
+
+def update_rgb(rgb):
+    r, g, b = 0, 1, 2
+    if (rgb[r] > 0 and rgb[b] == 0):
+        rgb[r] -= 1
+        rgb[g] += 1
+    elif (rgb[g] > 0 and rgb[r] == 0):
+        rgb[g] -= 1
+        rgb[b] += 1
+    else:
+        rgb[b] -= 1
+        rgb[r] += 1
+    return tuple(rgb)
 
 def check_line(line):
     return ("=" in line)
@@ -136,21 +136,24 @@ if __name__ == "__main__":
     points = []
     output = "output.py"
 
+    onkey(lambda: tracer(0), "space")
+    listen()
+    title("Press SPACE to skip preview")
+    speed(0)
+
     try:
         options = parse_file("text.txt")
     except:
         custom_log("error", "Couldn't open the specified file")
 
     movement = get_moves(int(options["taille"]), int(options["angle"]), points)
-    rgb = ("rgb" in options and options["rgb"] == 1)
-    onkey(lambda: tracer(0), "space")
-    listen()
-    title("Press SPACE to skip preview")
-    speed(0)
+    rgb = ("rgb" in options and int(options["rgb"]) == 1)
+
     try:
         treat_axiom(parse_levels(options["axiome"], int(options["niveau"]), options["regles"]), movement, output, rgb)
     except:
         custom_log("error", "Couldn't write to the specified file")
+        
     tracer(1)
     title("Click anywhere to close")
     exitonclick()
