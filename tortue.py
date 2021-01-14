@@ -227,7 +227,7 @@ def parse_file(options):
                 else:
                     reading_rules = 0
                     if (r[0] in options):
-                        custom_log("warning", "'{}' parameter was specified twice".format(r[0]))
+                        custom_log("warning", "'{}' parameter was specified twice, keeping first assignment".format(r[0]))
                     else:
                         options[r[0]] = sanitize_line(r[1])
             else:
@@ -291,7 +291,7 @@ def treat_axiom(axiom, m, output, rgb):
             custom_log("error", "Unrecognized character in axiom: " + c)
     f.write("tracer(1);title('Click anywhere to close');exitonclick()")
     f.close()
-    custom_log("success", "Sctipt generated to {} . It can be launched using python {}".format(output, output))
+    custom_log("success", "Sctipt generated to {} . It can be launched using command 'python {}'".format(output, output))
 
 def test_requirements(options):
     """
