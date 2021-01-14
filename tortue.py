@@ -226,7 +226,10 @@ def parse_file(options):
                     options["regles"].append(sanitize_line(line))
                 else:
                     reading_rules = 0
-                    options[r[0]] = sanitize_line(r[1])
+                    if (r[0] in options):
+                        custom_log("warning", "'{}' parameter was specified twice".format(r[0]))
+                    else:
+                        options[r[0]] = sanitize_line(r[1])
             else:
                 custom_log("error", "Provided file is not following the correct syntax")
     f.close()
